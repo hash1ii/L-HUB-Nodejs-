@@ -1,0 +1,186 @@
+const teachers = require("../Models/teachermodel");
+// const subjects = require("../Models/subjectmodel");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const asyncHandler = require("express-async-handler");
+
+exports.addteacher = asyncHandler(async (req, res) => {
+  console.log("hi");
+  const { name, email, contact, subject ,age,qualification, password ,} = req.body;
+  const image = req.file.filename;
+//   console.log(subject,topic, description);
+  console.log(req.body)
+  console.log(image);
+  // console.log(req.file)
+  if (
+    req.body.name === "" ||
+    req.body.email === "" ||
+    req.body.contact === "" ||
+    req.body.subject === "" ||
+    req.body.age === "" ||
+    req.body.qualification=== "" ||
+    req.body.password=== "" ||
+    req.file.image === ""
+  ) {
+    res.status(405).send("All values are required");
+  } else {
+    const existingadmin = await teachers.findOne({ email: req.body.email});
+    if (existingadmin) {
+      console.log("Email already exist");
+      res.status(400).json({ error: "Email already exist" });
+    } else {
+      
+      // const image=req.files.filename;
+      // console.log(image);
+      const form = await teachers.create({
+        name: name,
+        email: email,
+        contact: contact,
+        subject: subject,
+        age: age,
+        qualification: qualification,
+        password: password,
+        image: image,
+      });
+      console.log(form);
+      if (form) {
+        res.send("Success");
+      } else {
+        res.send("Error");
+      }
+      console.log("form successfully added");
+    }
+  }
+});
+
+exports.listteacher= asyncHandler(async (req, res) => {
+  try {
+    const element = await teachers.find();
+    
+    const data={
+      id: element._id,
+      name: element.name,
+      email: element.email,
+      contact: element.contact,
+      age: element.age,
+      subject: element.subject,
+      password: element.password,
+      image: element.image
+    }
+    
+    
+    res.json({element,data :data});
+
+  } catch (error) {
+    res.send("failed to list");
+  }
+});
+
+// exports.listsubjects = asyncHandler(async (req, res) => {
+//   const {id} = req.params;
+//   try {
+//     const element = await subjects.findById(id);
+    
+//     res.json(element);
+//   } catch (error) {
+//     res.send("failed to list");
+//   }
+// });
+
+exports.updateteacher= asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { name,email,contact,age,qualification,subject } = req.body;
+  console.log(subject);
+  const updateFields = {
+    name: name,
+    email: email,
+    contact: contact,
+    age: age,
+    qualification:qualification,
+    subject:subject,
+    // password: password,
+    
+  };
+
+  if (req.file) {
+    console.log(req.file);
+    // An image was uploaded, update the image path
+    const image = req.file.filename; // Use the filename property
+    updateFields.image = image;
+  }
+  try {
+    const element = await teachers.findByIdAndUpdate(
+      id,
+      updateFields, // Use the updateFields object directly
+      // { new: true }
+    );
+    console.log(element);
+    res.json(element);
+  } catch (error) {
+    console.error("Error updating admin:", error);
+    res.status(500).json({ error: "Failed to update admin" });
+  }
+});
+
+
+exports.detailsteacher = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  console.log(id);
+  try {
+    
+
+    const details = await teachers.findById(id);
+
+    if (!details) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+    // const formattedImages = details.images.map((image) => `${image}`);
+    const formattedDetails = {
+      id: details._id,
+      name: details.name,
+      email: details.email,
+      contact: details.contact,
+      age: details.age,
+      qualification: details.qualification,
+      subject: details.subject,
+      images: details.image,
+      
+  
+     
+      // images: details.images.map((image) => `${image}`)
+    };
+     console.log(formattedDetails)
+
+    res.json(formattedDetails);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+exports.deleteteacher = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await teachers.findByIdAndDelete(id);
+    res.json({ message: "Entry deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.json({ message: "Error deleting entry" });
+  }
+});
+exports.listteacher2= asyncHandler(async (req, res) => {
+  const { subject } = req.query;
+
+  try {
+    // Use the subject parameter to filter data from your database
+    const filteredData = await teachers.find({ subject });
+
+    res.json(filteredData);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
